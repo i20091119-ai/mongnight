@@ -29,11 +29,6 @@
       --border-radius-md: 8px;
       --border-radius-lg: 12px;
     }
-    @media print {
-      body > * { display: none !important; }
-      #mk-pa { display: block !important; position: fixed; inset: 0; width: 100%; }
-      @page { size: A4 portrait; margin: 12mm 16mm; }
-    }
     #mk-pa { display: none; }
   </style>
 </head>
@@ -128,20 +123,7 @@ function App() {
   const [tab, setTab] = useState("form");
   const [f, setF] = useState(JSON.parse(JSON.stringify(INIT)));
 
-  useEffect(() => {
-    const el = document.createElement("style");
-    el.id = "mk-print-css";
-    el.textContent = `
-      @media print {
-        body > * { display: none !important; }
-        #mk-pa { display: block !important; position: fixed; inset: 0; width: 100%; }
-        @page { size: A4 portrait; margin: 12mm 16mm; }
-      }
-      #mk-pa { display: none; }
-    `;
-    document.head.appendChild(el);
-    return () => document.getElementById("mk-print-css")?.remove();
-  }, []);
+  // print CSS is in <style> tag
 
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   const setObj = (i, v) => setF(p => { const a = [...p.objectives]; a[i] = v; return { ...p, objectives: a }; });
@@ -174,6 +156,21 @@ function App() {
 
   const totalMin = f.sessions.reduce((s, x) => s + (parseInt(x.time) || 0), 0);
   const validObjs = f.objectives.filter(o => o.trim());
+
+  const handlePrint = () => {
+    const pa = document.getElementById("mk-pa");
+    pa.style.display = "block";
+    const w = window.open("", "_blank");
+    if (!w) {
+      alert("팝업이 차단되어 있습니다.\n브라우저 주소창 오른쪽의 팝업 차단 아이콘을 클릭하여 허용해 주세요.");
+      pa.style.display = "none";
+      return;
+    }
+    w.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><title>강의계획서</title><style>*{box-sizing:border-box;}body{margin:0;}@page{size:A4 portrait;margin:12mm 16mm;}</style></head><body>' + pa.innerHTML + '</body></html>');
+    w.document.close();
+    pa.style.display = "none";
+    setTimeout(() => { w.focus(); w.print(); }, 400);
+  };
 
   const navBtn = (label, id) => (
     <button onClick={() => setTab(id)} style={{
@@ -361,9 +358,7 @@ function App() {
           {navBtn("👁 미리보기", "preview")}
           {tab === "preview" && (
             <button onClick={() => {
-              document.getElementById("mk-pa").style.display = "block";
-              window.print();
-              setTimeout(() => { document.getElementById("mk-pa").style.display = "none"; }, 500);
+              handlePrint();
             }} style={{ padding: "7px 16px", borderRadius: 6, border: "none", background: "#fff", color: "#111", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
               🖨 PDF 저장
             </button>
@@ -559,9 +554,7 @@ function App() {
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => setTab("form")} style={{ padding: "8px 18px", borderRadius: 6, border: "0.5px solid var(--color-border-secondary)", background: "var(--color-background-primary)", cursor: "pointer", fontSize: 13, fontFamily: "inherit", color: "var(--color-text-primary)" }}>← 수정하기</button>
             <button onClick={() => {
-              document.getElementById("mk-pa").style.display = "block";
-              window.print();
-              setTimeout(() => { document.getElementById("mk-pa").style.display = "none"; }, 600);
+              handlePrint();
             }} style={{ padding: "8px 22px", borderRadius: 6, border: "none", background: "#111", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
               🖨 PDF로 저장하기
             </button>
