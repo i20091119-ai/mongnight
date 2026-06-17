@@ -4,9 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>뭉클한 밤 · 강의계획서</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- React/Babel은 <body>에서 CDN 폴백 로더로 안정적으로 불러옵니다 -->
+
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; padding: 0; }
@@ -30,10 +29,76 @@
       --border-radius-lg: 12px;
     }
     #mk-pa { display: none; }
+    @keyframes bootspin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div id="boot" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:16px;font-family:'Apple SD Gothic Neo','맑은 고딕','Malgun Gothic',sans-serif;color:#444;">
+      <div style="width:34px;height:34px;border:3px solid #e0e0e0;border-top-color:#111;border-radius:50%;animation:bootspin 0.8s linear infinite;"></div>
+      <div style="font-size:14px;">강의계획서 도구를 불러오는 중입니다…</div>
+    </div>
+  </div>
+
+  <!-- ── CDN 폴백 로더 ─────────────────────────────────────────
+       React / ReactDOM / Babel을 순서대로 불러오되, unpkg가 느리거나
+       차단되면 jsdelivr로 자동 전환합니다. 모두 실패하면 흰 화면 대신
+       한국어 안내를 보여줍니다. -->
+  <script>
+  (function () {
+    var CDNS = ["https://unpkg.com/", "https://cdn.jsdelivr.net/npm/"];
+    var LIBS = [
+      { path: "react@18/umd/react.production.min.js",        ok: function () { return window.React; } },
+      { path: "react-dom@18/umd/react-dom.production.min.js", ok: function () { return window.ReactDOM; } },
+      { path: "@babel/standalone@7/babel.min.js",            ok: function () { return window.Babel; } }
+    ];
+
+    function showError(msg) {
+      var b = document.getElementById("boot");
+      if (!b) return;
+      b.innerHTML =
+        '<div style="max-width:430px;text-align:center;padding:24px;">' +
+          '<div style="font-size:34px;margin-bottom:12px;">⚠️</div>' +
+          '<div style="font-size:15px;font-weight:700;margin-bottom:10px;">페이지를 불러오지 못했습니다</div>' +
+          '<div style="font-size:13px;color:#666;line-height:1.7;">' + msg + '</div>' +
+          '<button onclick="location.reload()" style="margin-top:18px;padding:8px 22px;border:none;border-radius:6px;background:#111;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">다시 시도</button>' +
+        '</div>';
+    }
+
+    function loadLib(i) {
+      if (i >= LIBS.length) {
+        // 모든 라이브러리 로드 완료 → JSX 변환을 명시적으로 실행
+        try { window.Babel.transformScriptTags(); }
+        catch (e) { showError("화면을 구성하는 중 오류가 발생했습니다.<br/>브라우저를 최신 버전으로 업데이트한 뒤 다시 시도해 주세요."); }
+        return;
+      }
+      tryCDN(LIBS[i], 0, function () { loadLib(i + 1); });
+    }
+
+    function tryCDN(lib, ci, done) {
+      if (ci >= CDNS.length) {
+        showError("필요한 자원(React·Babel)에 접속할 수 없습니다.<br/>인터넷 연결 또는 방화벽(unpkg.com · jsdelivr.net 차단)을 확인해 주세요.");
+        return;
+      }
+      var s = document.createElement("script");
+      s.src = CDNS[ci] + lib.path;
+      s.crossOrigin = "anonymous";
+      s.onload = function () { lib.ok() ? done() : tryCDN(lib, ci + 1, done); };
+      s.onerror = function () { tryCDN(lib, ci + 1, done); };
+      document.head.appendChild(s);
+    }
+
+    // 안전장치: 20초가 지나도 앱이 뜨지 않으면 안내 메시지 표시
+    setTimeout(function () {
+      if (document.getElementById("boot") && !window.React) {
+        showError("네트워크가 느리거나 외부 자원이 차단된 것 같습니다.<br/>잠시 후 다시 시도해 주세요.");
+      }
+    }, 20000);
+
+    loadLib(0);
+  })();
+  </script>
+
   <script type="text/babel">
 const { useState, useEffect } = React;
 
